@@ -1,12 +1,10 @@
 #include <iostream>
-#include "Grid.h"
 #include "Field.h"
 
 using namespace std;
 
-Field::Field(int nsize, Grid obj1)
+Field::Field(int nsize, Grid &obj)
 { 
-  obj = obj1
   ARR_SIZE = nsize*obj.grid_pts;
   cout << "Grid object is being created" << endl;  
 }
@@ -16,7 +14,7 @@ Field::~Field(void)
   cout << "Field object is being deleted" << endl;
 }
 
-void Field::initialize()
+void Field::initialize(Grid &obj)
 {
   for(int i=0; i<obj.L; i++) {
     for(int j=0; j<obj.W; j++) {
