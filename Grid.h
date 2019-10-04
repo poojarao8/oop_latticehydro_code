@@ -1,3 +1,6 @@
+#ifndef Grid_h
+#define Grid_h
+
 class Grid
 {
   public:
@@ -11,3 +14,5 @@ class Grid
   private:
    double dx;
 };
+
+#endif

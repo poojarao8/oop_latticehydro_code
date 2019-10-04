@@ -1,3 +1,6 @@
+#ifndef Field_h
+#define Field_h
+
 #include "Grid.h"
 
 class Field
@@ -12,3 +15,4 @@ class Field
     int ARR_SIZE;
 };
 
+#endif
