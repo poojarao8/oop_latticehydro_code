@@ -5,8 +5,9 @@ using namespace std;
 
 Field::Field(int nsize, Grid &obj)
 {
-  NSIZE = nsize; 
-  ARR_SIZE = nsize*obj.grid_pts;
+  obj = test; 
+  NSIZE = nsize;
+  ARR_SIZE = nsize*obj->grid_pts;
   cout << "Grid object is being created" << endl;  
 }
 
@@ -22,20 +23,20 @@ Field::~Field(void)
 // Should I make Field a derived class of Grid??
 int Field::I(int w, int i, int j, int k, Grid &obj)
 {
-  return (i*obj.W*obj.H*NSIZE + j*obj.H*NSIZE + k*NSIZE + w);
+  return (i*obj->W*obj->H*NSIZE + j*obj->H*NSIZE + k*NSIZE + w);
 }
 
-void Field::initialize(Grid &obj)
+void Field::initialize()
 {
-  for(int i=0; i<obj.L; i++) {
-    for(int j=0; j<obj.W; j++) {
-      for(int k=0; k<obj.H; k++) {
+  for(int i=0; i<obj->L; i++) {
+    for(int j=0; j<obj->W; j++) {
+      for(int k=0; k<obj->H; k++) {
 
-        double id = static_cast<double> (i-obj.L/2);
-        double jd = static_cast<double> (j-obj.W/2);
-        double kd = static_cast<double> (k-obj.H/2);
+        double id = static_cast<double> (i-obj->L/2);
+        double jd = static_cast<double> (j-obj->W/2);
+        double kd = static_cast<double> (k-obj->H/2);
 
-        vel[I(X,i,j,k)] = coef*exp(-eta*(obj.dx/2.0)*(obj.dx/2.0)
+        vel[I(X,i,j,k)] = coef*exp(-eta*(obj->dx/2.0)*(obj->dx/2.0)
                               *((id*id)+(jd*jd)+(kd*kd)));
       }
     }
