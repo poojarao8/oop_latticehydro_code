@@ -8,11 +8,10 @@ class Grid
    int W;
    int H;
    int grid_pts;
+   double dx;
    Grid(int, int, int); // constructor declaration
     ~Grid(); // destructor declaration
    
-  private:
-   double dx;
 };
 
 #endif
