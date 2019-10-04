@@ -3,9 +3,9 @@ class Field
 
   public:
     void initialize();
-    Field(int, Grid&); // constructor
+    Field(int, Grid); // constructor
     ~Field(); // destructor
-    Grid& obj;
+    Grid* obj;
   private:
     int ARR_SIZE;
 };

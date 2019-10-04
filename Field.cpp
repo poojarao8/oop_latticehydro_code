@@ -4,10 +4,11 @@
 
 using namespace std;
 
-Field::Field(int nsize, Grid& obj)
-{
+Field::Field(int nsize, Grid obj1)
+{ 
+  obj = obj1
   ARR_SIZE = nsize*obj.grid_pts;
-  cout << "Grid object is being created" << endl;
+  cout << "Grid object is being created" << endl;  
 }
 
 Field::~Field(void)
