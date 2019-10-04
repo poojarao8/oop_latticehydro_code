@@ -3,7 +3,7 @@
 
 using namespace std;
 
-Field::Field(int nsize, Grid &obj)
+Field::Field(int nsize, Grid *test)
 {
   obj = test; 
   NSIZE = nsize;
@@ -21,7 +21,7 @@ Field::~Field(void)
 //PRAO: Is there a sensible way to avoid passing in grid obj every time 
 // indexing function is evoked (it is evoked a lot of times)
 // Should I make Field a derived class of Grid??
-int Field::I(int w, int i, int j, int k, Grid &obj)
+int Field::I(int w, int i, int j, int k)
 {
   return (i*obj->W*obj->H*NSIZE + j*obj->H*NSIZE + k*NSIZE + w);
 }
