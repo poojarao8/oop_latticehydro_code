@@ -3,16 +3,19 @@
 
 #include "Grid.h"
 
+class Grid;
+
 class Field
 {
 
   public:
-    void initialize(Grid &);
-    Field(int, Grid &); // constructor
+    void initialize();
+    Field(int, Grid *); // constructor
     ~Field(); // destructor
-    int I(int, int, int, int, Grid &);
+    int I(int, int, int, int);
   private:
     int NSIZE; // 1 or 3 depending on scalar or vector
+    Grid *obj;
     int ARR_SIZE;
 };
 
