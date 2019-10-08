@@ -9,7 +9,7 @@ Grid::Grid(int l, int w, int h)
   W = w;
   H = h;
 
-  int grid_pts = L*W*H;
+  grid_pts = L*W*H;
   dx = 2*3.14/L;
 
   cout << "Object is being created" << endl;

@@ -16,9 +16,9 @@ OBJECTS = $(DEPENDENCIES) $(addsuffix .o,$(basename $(SOURCES)))
 ########################################################################
 ifeq ($(MACHINE),PRAO)
 
-COMPILE = mpic++ -O3 -std=c++17
-CC= mpicc -O3 -std=c++17
-CFLAGS = -Wall -Wextra
+COMPILE = mpic++ -g -O0 -std=c++17
+CC= mpicc -O0 -std=c++17
+CFLAGS = -g -Wall -Wextra
 
 #COMPILE = mpic++ -O0 -std=c++11 -fopenmp
 #CC= mpicc -O0 -std=c++11 -fopenmp
