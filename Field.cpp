@@ -3,11 +3,13 @@
 
 using namespace std;
 
-Field::Field(int nsize, Grid *test)
+Field::Field(int nsize, Grid *test, int btype)
 {
   obj = test;
+  BTYPE = btype;
   NSIZE = nsize;
-  ARR_SIZE = nsize*obj->grid_pts;
+  int BUFF_SIZE = (obj->L+2*NGUARD)*(obj->W+2*NGUARD)*(obj->H+2*NGUARD);
+  ARR_SIZE = nsize*BUFF_SIZE; 
   arr = new double[ARR_SIZE];
   cout << "Grid object is being created" << endl;  
 }
@@ -49,6 +51,12 @@ void Field::initialize()
   }
 }
 
+void update_guard()
+{
+
+}
+
+
 /*Boundary operator of a two chain. This is the curl operator. Since the * operator between 2-chain and 1-chain don't do anything, we are really using this as *del.i NOTE: This method is for updating the interior cells only. Having a separate boundary update makes it easier to have different boundary implementations in the future. */
 void Field::bd(double out[])
 {
@@ -58,15 +66,16 @@ void Field::bd(double out[])
       for(int k=1; k<obj->H-1; k++) {
         
         int ind = I(X,i,j,k);
-        out[ind] = this->arr[I(ZX,i,j,k-1)] - this->arr[I(ZX,i,j,k+1)]
-                        - this->arr[I(XY,i,j-1,k)] + this->arr[I(XY,i,j+1,k)];
+        out[ind]   = this->arr[I(ZX,i,j,k-1)] - this->arr[I(ZX,i,j,k+1)]
+                   - this->arr[I(XY,i,j-1,k)] + this->arr[I(XY,i,j+1,k)];
 
         out[ind+1] = this->arr[I(XY,i-1,j,k)] - this->arr[I(XY,i+1,j,k)]
-                          - this->arr[I(YZ,i,j,k-1)] + this->arr[I(YZ,i,j,k+1)];
+                   - this->arr[I(YZ,i,j,k-1)] + this->arr[I(YZ,i,j,k+1)];
 
         out[ind+2] = this->arr[I(YZ,i,j-1,k)] - this->arr[I(YZ,i,j+1,k)]
-                          - this->arr[I(ZX,i-1,j,k)] + this->arr[I(ZX,i+1,j,k)];
+                   - this->arr[I(ZX,i-1,j,k)] + this->arr[I(ZX,i+1,j,k)];
       }
     }
   }
 }
+

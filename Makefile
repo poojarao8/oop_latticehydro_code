@@ -1,7 +1,7 @@
 MACHINE = PRAO
 #MACHINE = STAMPEDE2
 LDFLAGS =
-DEPENDENCIES = Grid.cpp Field.cpp 
+DEPENDENCIES = Grid.cpp Field.cpp TimeIntegration.cpp 
 SOURCES = main.cpp
 EXEC    = a.out
 
