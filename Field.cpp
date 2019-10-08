@@ -35,8 +35,10 @@ void Field::initialize(Grid &obj)
         double jd = static_cast<double> (j-obj.W/2);
         double kd = static_cast<double> (k-obj.H/2);
 
-        vel[I(X,i,j,k)] = coef*exp(-eta*(obj.dx/2.0)*(obj.dx/2.0)
-                              *((id*id)+(jd*jd)+(kd*kd)));
+      
+        I(X,i,j,k) = 2;
+        //vel[I(X,i,j,k)] = coef*exp(-eta*(obj.dx/2.0)*(obj.dx/2.0)
+          //                   *((id*id)+(jd*jd)+(kd*kd)));
       }
     }
   }
