@@ -71,7 +71,114 @@ void Field::update_bdry(char bdry)
 
 void Field::periodic_bdry()
 {
-   
+   //FIXME: update NDIMS and NGUARD as appropriate
+   //FIXME: update gSize[dir] as appropriate, note that this should be # gridpts incl ghost
+   //FIXME: update vecLen --> 3 for vector, 1 for scalar
+   int gIndex[NDIMS];
+   int orth_dir[NDIMS-1];
+   double *bufSend = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
+   double *bufRecv = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
+ 
+   // PRAO: Storage for the ghost cells
+   double *store_xLow = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
+   double *store_xUp = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
+   double *store_yLow = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
+   double *store_yUp = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
+   double *store_zLow = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
+   double *store_zUp = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
+
+   for (int dir = 0; dir < NDIMS; ++dir) {
+     for (int p = 0; p < 2; ++p) {
+       for (int i = 0; i < NGUARD; ++i) {
+         for (int j = 0; j < gSize[dir]; ++j) {
+           for (int k = 0; k < gSize[dir]; ++k) {
+             // determines xIndex in velArray
+             gIndex[dir] = p*(gSize[dir] - 3*NGUARD) + (i + NGUARD);
+             orth_dir[0] = (dir+1) % NDIMS;
+             orth_dir[1] = (dir+2) % NDIMS;
+ 
+             gIndex[orth_dir[0]] = j;
+             gIndex[orth_dir[1]] = k;
+             // velocity vector index
+             int ind = I(vecLen, 0, gIndex[0], gIndex[1], gIndex[2], gSize[dir], gSize[dir]);
+             // buffer array index
+             int indBuf = I(vecLen, 0, i, j, k, NGUARD, gSize[dir]);
+ 
+             // populate buffer array from velocity
+             for (int w=0; w<vecLen; ++w) {
+               // PRAO: Let's just store this in a very hacky way for now
+               if ((dir == 0) & (p == 0)) 
+                   store_xLow[indBuf+w] = vel[ind+w];
+               if ((dir == 0) & (p == 1)) 
+                   store_xUp[indBuf+w] = vel[ind+w];
+               if ((dir == 1) & (p == 0)) 
+                   store_yLow[indBuf+w] = vel[ind+w];
+               if ((dir == 1) & (p == 1)) 
+                   store_yUp[indBuf+w] = vel[ind+w];
+               if ((dir == 2) & (p == 0)) 
+                   store_zLow[indBuf+w] = vel[ind+w];
+               if ((dir == 2) & (p == 1)) 
+                   store_zUp[indBuf+w] = vel[ind+w];
+             }
+           }
+         }
+       }   
+     }
+   }
+   for (int dir = 0; dir < NDIMS; ++dir) {
+     for (int p = 0; p < 2; ++p) {
+       for (int i = 0; i < NGUARD; ++i) {
+         for (int j = 0; j < gSize[dir]; ++j) {
+           for (int k = 0; k < gSize[dir]; ++k)
+           {
+             gIndex[dir] = p*(gSize[i] - NGUARD) + i; // determines xIndex in velArray
+             orth_dir[0] = (dir+1) % NDIMS;
+             orth_dir[1] = (dir+2) % NDIMS;
+ 
+             gIndex[orth_dir[0]] = j;
+             gIndex[orth_dir[1]] = k;
+ 
+             int ind = I(vecLen, 0, gIndex[0], gIndex[1], gIndex[2], gSize[dir], gSize[dir]); 
+             int indBuf = I(vecLen, 0, i, j, k, NGUARD, gSize[dir]); 
+ 
+             // populate velocity array from buffer
+             for (int w=0; w<vecLen; ++w)
+             {
+               // PRAO: So now we access the storage
+               //    Note that when we are doing xLow on the Recv side, we need the data stored
+               //    in xUp on the send side, and so on on for each case, so the Up and Low's 
+               //    switch places
+               if ((dir == 0) & (p == 0))
+                   vel[ind+w] = store_xUp[indBuf+w];
+               if ((dir == 0) & (p == 1))
+                   vel[ind+w] = store_xLow[indBuf+w];
+               if ((dir == 1) & (p == 0))
+                   vel[ind+w] = store_yUp[indBuf+w];
+               if ((dir == 1) & (p == 1))
+                   vel[ind+w] = store_yLow[indBuf+w];
+               if ((dir == 2) & (p == 0))
+                   vel[ind+w] = store_zUp[indBuf+w];
+               if ((dir == 2) & (p == 1))
+                   vel[ind+w] = store_zLow[indBuf+w];
+             }
+           }
+         }
+       }
+     }
+   }
+ 
+   delete[] bufSend;
+   delete[] bufRecv;
+ 
+   // delete extra storage for serial
+   delete[] store_xUp;
+   delete[] store_xLow;
+   delete[] store_yUp;
+   delete[] store_yLow;
+   delete[] store_zUp;
+   delete[] store_zLow;
+ 
+
 }
 
 /*Boundary operator of a two chain. This is the curl operator. Since the * operator between 2-chain and 1-chain don't do anything, we are really using this as *del.i NOTE: This method is for updating the interior cells only. Having a separate boundary update makes it easier to have different boundary implementations in the future. */
