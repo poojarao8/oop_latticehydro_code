@@ -5,6 +5,7 @@
 #include <cmath>
 #include "Grid.h"
 #include "Field.h"
+#include "Solver.h"
 #include "TimeIntegration.h"
 
 #define X 0
@@ -20,5 +21,6 @@ using namespace std;
 
 const double eta = 100.0;
 const double coef = 2.5;
+const double nu = 0.001;
 
 #endif

@@ -9,11 +9,11 @@ int main()
 
   Field velocity(3, &coarse_grid, 0);
   velocity.initialize();
+  velocity.update_bdry('PERIODIC');
 
   Field pressure(1, &coarse_grid, 0);
   pressure.initialize();
-
-  TimeIntegration RK4;
+  pressure.update_bdry('PERIODIC');
 
   return 0;
 }
