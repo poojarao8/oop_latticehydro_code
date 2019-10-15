@@ -26,6 +26,8 @@ class Field
     int ARR_SIZE;
     Grid *obj;
     void periodic_bdry();
+    int L, W, H;
+    int GL, GW, GH;
 };
 
 #endif

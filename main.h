@@ -5,7 +5,7 @@
 #include <cmath>
 #include "Grid.h"
 #include "Field.h"
-#include "Solver.h"
+#include "solver.h"
 #include "TimeIntegration.h"
 
 #define X 0

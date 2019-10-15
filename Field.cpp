@@ -6,9 +6,16 @@ using namespace std;
 Field::Field(int nsize, Grid *test, int btype)
 {
   obj = test;
+  L = obj->L;
+  W = obj->W;
+  H = obj->H;
+  GL = obj->GL;
+  GW = obj->GW;
+  GH = obj->GH;
+
   BTYPE = btype;
   NSIZE = nsize;
-  int BUFF_SIZE = (obj->L+2*NGUARD)*(obj->W+2*NGUARD)*(obj->H+2*NGUARD);
+  int BUFF_SIZE = (L+2*NGUARD)*(W+2*NGUARD)*(H+2*NGUARD);
   ARR_SIZE = nsize*BUFF_SIZE; 
   arr = new double[ARR_SIZE];
   cout << "Field object is being created" << endl;  
@@ -23,23 +30,24 @@ Field::~Field(void)
 // w is 0 for scalars
 int Field::I(int w, int i, int j, int k)
 {
-  return (i*obj->W*obj->H*NSIZE + j*obj->H*NSIZE + k*NSIZE + w);
+  return (i*W*H*NSIZE + j*H*NSIZE + k*NSIZE + w);
 }
 
 void Field::initialize()
 {
-  for(int i=NGUARD; i < obj->L+NGUARD; i++) {
-    for(int j=NGUARD; j < obj->W+NGUARD; j++) {
-      for(int k=NGUARD; k < obj->H+NGUARD; k++) {
+  // intialize in the interior cells only
+  for(int i=NGUARD; i < L+NGUARD; i++) {
+    for(int j=NGUARD; j < W+NGUARD; j++) {
+      for(int k=NGUARD; k < H+NGUARD; k++) {
 
         int ind = I(X,i,j,k);
         this->arr[ind] = 0.0; // for pressure
 
         if (NSIZE>1) // if velocity
         {
-          double id = static_cast<double> (i-obj->L/2.0);
-          double jd = static_cast<double> (j-obj->W/2.0);
-          double kd = static_cast<double> (k-obj->H/2.0);
+          double id = static_cast<double> (i-L/2.0);
+          double jd = static_cast<double> (j-W/2.0);
+          double kd = static_cast<double> (k-H/2.0);
 
           this->arr[ind] = coef*exp(-eta*(obj->dx)*(obj->dx)
                                     *((id*id)+(jd*jd)+(kd*kd)));
@@ -71,123 +79,112 @@ void Field::update_bdry(char bdry)
 
 void Field::periodic_bdry()
 {
-   //FIXME: update NDIMS and NGUARD as appropriate
-   //FIXME: update gSize[dir] as appropriate, note that this should be # gridpts incl ghost
-   //FIXME: update vecLen --> 3 for vector, 1 for scalar
-   int gIndex[NDIMS];
-   int orth_dir[NDIMS-1];
-   double *bufSend = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
-   double *bufRecv = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
- 
-   // PRAO: Storage for the ghost cells
-   double *store_xLow = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
-   double *store_xUp = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
-   double *store_yLow = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
-   double *store_yUp = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
-   double *store_zLow = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
-   double *store_zUp = new double[gSize[0]*gSize[0]*NGUARD*vecLen];
+  int w = 0; //FIXME: hardcoded for scalar array update
+  // Update the xlower bdry
+  for (int i = 0; i < NGUARD; ++i) {
+    for (int j = 0; j < GW; ++j) { 
+      for (int k = 0; k < GH; ++k) {
 
-   for (int dir = 0; dir < NDIMS; ++dir) {
-     for (int p = 0; p < 2; ++p) {
-       for (int i = 0; i < NGUARD; ++i) {
-         for (int j = 0; j < gSize[dir]; ++j) {
-           for (int k = 0; k < gSize[dir]; ++k) {
-             // determines xIndex in velArray
-             gIndex[dir] = p*(gSize[dir] - 3*NGUARD) + (i + NGUARD);
-             orth_dir[0] = (dir+1) % NDIMS;
-             orth_dir[1] = (dir+2) % NDIMS;
- 
-             gIndex[orth_dir[0]] = j;
-             gIndex[orth_dir[1]] = k;
-             // velocity vector index
-             int ind = I(vecLen, 0, gIndex[0], gIndex[1], gIndex[2], gSize[dir], gSize[dir]);
-             // buffer array index
-             int indBuf = I(vecLen, 0, i, j, k, NGUARD, gSize[dir]);
- 
-             // populate buffer array from velocity
-             for (int w=0; w<vecLen; ++w) {
-               // PRAO: Let's just store this in a very hacky way for now
-               if ((dir == 0) & (p == 0)) 
-                   store_xLow[indBuf+w] = vel[ind+w];
-               if ((dir == 0) & (p == 1)) 
-                   store_xUp[indBuf+w] = vel[ind+w];
-               if ((dir == 1) & (p == 0)) 
-                   store_yLow[indBuf+w] = vel[ind+w];
-               if ((dir == 1) & (p == 1)) 
-                   store_yUp[indBuf+w] = vel[ind+w];
-               if ((dir == 2) & (p == 0)) 
-                   store_zLow[indBuf+w] = vel[ind+w];
-               if ((dir == 2) & (p == 1)) 
-                   store_zUp[indBuf+w] = vel[ind+w];
-             }
-           }
-         }
-       }   
-     }
-   }
-   for (int dir = 0; dir < NDIMS; ++dir) {
-     for (int p = 0; p < 2; ++p) {
-       for (int i = 0; i < NGUARD; ++i) {
-         for (int j = 0; j < gSize[dir]; ++j) {
-           for (int k = 0; k < gSize[dir]; ++k)
-           {
-             gIndex[dir] = p*(gSize[i] - NGUARD) + i; // determines xIndex in velArray
-             orth_dir[0] = (dir+1) % NDIMS;
-             orth_dir[1] = (dir+2) % NDIMS;
- 
-             gIndex[orth_dir[0]] = j;
-             gIndex[orth_dir[1]] = k;
- 
-             int ind = I(vecLen, 0, gIndex[0], gIndex[1], gIndex[2], gSize[dir], gSize[dir]); 
-             int indBuf = I(vecLen, 0, i, j, k, NGUARD, gSize[dir]); 
- 
-             // populate velocity array from buffer
-             for (int w=0; w<vecLen; ++w)
-             {
-               // PRAO: So now we access the storage
-               //    Note that when we are doing xLow on the Recv side, we need the data stored
-               //    in xUp on the send side, and so on on for each case, so the Up and Low's 
-               //    switch places
-               if ((dir == 0) & (p == 0))
-                   vel[ind+w] = store_xUp[indBuf+w];
-               if ((dir == 0) & (p == 1))
-                   vel[ind+w] = store_xLow[indBuf+w];
-               if ((dir == 1) & (p == 0))
-                   vel[ind+w] = store_yUp[indBuf+w];
-               if ((dir == 1) & (p == 1))
-                   vel[ind+w] = store_yLow[indBuf+w];
-               if ((dir == 2) & (p == 0))
-                   vel[ind+w] = store_zUp[indBuf+w];
-               if ((dir == 2) & (p == 1))
-                   vel[ind+w] = store_zLow[indBuf+w];
-             }
-           }
-         }
-       }
-     }
-   }
- 
-   delete[] bufSend;
-   delete[] bufRecv;
- 
-   // delete extra storage for serial
-   delete[] store_xUp;
-   delete[] store_xLow;
-   delete[] store_yUp;
-   delete[] store_yLow;
-   delete[] store_zUp;
-   delete[] store_zLow;
- 
+        // FIXME: add weight to the constructor
+
+        int ind_guard = I(w, i, j, k);
+        int ind_int = I(w,i+L,j,k);
+
+        // this updates x, y and z components for vector arrays
+        for (int ii=0; ii<NSIZE; ++ii)
+          this->arr[ind_guard+ii] = this->arr[ind_int+ii];
+          
+      }
+    }
+  }
+
+  // Update the xupper bdry
+  for (int i = GL-NGUARD; i < GL; ++i) {
+    for (int j = 0; j < GW; ++j) {
+      for (int k = 0; k < GH; ++k) {
+
+        int ind_guard = I(w, i, j, k);
+        int ind_int = I(w,i-L,j,k);
+
+        // this updates x, y and z components for vector arrays
+        for (int ii=0; ii<NSIZE; ++ii)
+          this->arr[ind_guard+ii] = this->arr[ind_int+ii];
+      }
+    }
+  }
+
+
+  // Update the ylower bdry
+  for (int i = 0; i < GL; ++i) {
+    for (int j = 0; j < NGUARD; ++j) { 
+      for (int k = 0; k < GH; ++k) {
+
+        int ind_guard = I(w, i, j, k);
+        int ind_int = I(w,i,j+W,k);
+
+        // this updates x, y and z components for vector arrays
+        for (int ii=0; ii<NSIZE; ++ii)
+          this->arr[ind_guard+ii] = this->arr[ind_int+ii];
+      }
+    }
+  }
+
+  // Update the yupper bdry 
+  for (int i = GL; i < GL; ++i) {
+    for (int j = 0; j < GW-NGUARD; ++j) { 
+      for (int k = 0; k < GH; ++k) {
+
+        int ind_guard = I(w, i, j, k);
+        int ind_int = I(w,i,j-W,k);
+
+        // this updates x, y and z components for vector arrays
+        for (int ii=0; ii<NSIZE; ++ii)
+          this->arr[ind_guard+ii] = this->arr[ind_int+ii];
+      }
+    }
+  }
+
+
+  // Update the zlower bdry
+  for (int i = 0; i < 0; ++i) {
+    for (int j = 0; j < GW; ++j) { 
+      for (int k = 0; k < NGUARD; ++k) {
+
+        int ind_guard = I(w, i, j, k);
+        int ind_int = I(w,i,j,k+H);
+
+        // this updates x, y and z components for vector arrays
+        for (int ii=0; ii<NSIZE; ++ii)
+          this->arr[ind_guard+ii] = this->arr[ind_int+ii];
+      }
+    }
+  }
+
+  // Update the zupper bdry 
+  for (int i = GL; i < GL; ++i) {
+    for (int j = 0; j < GW; ++j) { 
+      for (int k = 0; k < GH-NGUARD; ++k) {
+
+        int ind_guard = I(w, i, j, k);
+        int ind_int = I(w,i,j,k-H);
+
+        // this updates x, y and z components for vector arrays
+        for (int ii=0; ii<NSIZE; ++ii)
+          this->arr[ind_guard+ii] = this->arr[ind_int+ii];
+      }
+    }
+  }
 
 }
 
-/*Boundary operator of a two chain. This is the curl operator. Since the * operator between 2-chain and 1-chain don't do anything, we are really using this as *del.i NOTE: This method is for updating the interior cells only. Having a separate boundary update makes it easier to have different boundary implementations in the future. */
+/*Boundary operator of a two chain. This is the curl operator. Since the * operator between 2-chain and 1-chain doesn't do anything, we are really using this as *del.i 
+NOTE: This method is for updating the interior cells only. Having a separate boundary update makes it easier to have different boundary implementations in the future. */
 void Field::bd(double out[])
 {
   // loop over the interior cells only
-  for(int i=NGUARD; i < obj->L+NGUARD; i++) { 
-    for(int j=NGUARD; j < obj->W+NGUARD; j++) { 
-      for(int k=NGUARD; k < obj->H+NGUARD; k++) {
+  for(int i=NGUARD; i < L+NGUARD; i++) { 
+    for(int j=NGUARD; j < W+NGUARD; j++) { 
+      for(int k=NGUARD; k < H+NGUARD; k++) {
         
         int ind = I(X,i,j,k);
         out[ind]   = this->arr[I(ZX,i,j,k-1)] - this->arr[I(ZX,i,j,k+1)]
@@ -206,9 +203,9 @@ void Field::bd(double out[])
 // Function for calculating divergence ( which is the boundary map of the 1-chain.) Outputs to a 0 chain of dimension L,W,H
 void Field::bd10(double out[])
 {
-  for(int i=NGUARD; i<obj->L+NGUARD; i++) {
-    for(int j=NGUARD; j<obj->W+NGUARD; j++) {
-      for(int k=NGUARD; k<obj->H+NGUARD; k++) {
+  for(int i=NGUARD; i<L+NGUARD; i++) {
+    for(int j=NGUARD; j<W+NGUARD; j++) {
+      for(int k=NGUARD; k<H+NGUARD; k++) {
  
         out[I(X,i,j,k)] = this->arr[I(X,i-1,j,k)] - this->arr[I(X,i+1,j,k)] 
                         + this->arr[I(Y,i,j-1,k)] - this->arr[I(Y,i,j+1,k)] 
@@ -221,9 +218,9 @@ void Field::bd10(double out[])
 // Function for calculating gradient ( which is the coboundary map of the 0-chain.) Outputs to a 1 chain of dimension L,W,H
 void Field::d01(double out[])
 {
-  for(int i=NGUARD; i < obj->L+NGUARD; i++) {
-    for(int j=NGUARD; j < obj->W+NGUARD; j++) {
-      for(int k=NGUARD; k < obj->H+NGUARD; k++) {
+  for(int i=NGUARD; i < L+NGUARD; i++) {
+    for(int j=NGUARD; j < W+NGUARD; j++) {
+      for(int k=NGUARD; k < H+NGUARD; k++) {
 
         int ind = I(X,i,j,k);
         // PRAO: pay attention to the indices here to make sure that they stay consistent
@@ -242,9 +239,9 @@ void Field::laplacian(double out[])
   double factor = -nu/(4.0*obj->dx*obj->dx);
   int center,up,down,left,right,front,back;
 
-  for(int i=NGUARD; i<obj->L+NGUARD; i++) {
-    for(int j=NGUARD; j<obj->W+NGUARD; j++) {
-      for(int k=NGUARD; k<obj->H+NGUARD; k++) {
+  for(int i=NGUARD; i<L+NGUARD; i++) {
+    for(int j=NGUARD; j<W+NGUARD; j++) {
+      for(int k=NGUARD; k<H+NGUARD; k++) {
 
         center= I(0,i,j,k);
         front = I(0,i-2,j,k);
@@ -269,9 +266,9 @@ void Field::laplacian(double out[])
 // Computation of the non-linear term d(Vf dot vf).
 void Field::dVfvf(double out[])
 {
-  for(int i=NGUARD; i<obj->L+NGUARD; i++) { 
-    for(int j=NGUARD; j<obj->W+NGUARD; j++) { 
-      for(int k=NGUARD; k<obj->H+NGUARD; k++) {
+  for(int i=NGUARD; i<L+NGUARD; i++) { 
+    for(int j=NGUARD; j<W+NGUARD; j++) { 
+      for(int k=NGUARD; k<H+NGUARD; k++) {
 
         double recipr = 1.0/(2.0*obj->dx); 
         int ind = I(X,i,j,k);
@@ -300,6 +297,7 @@ void Field::dVfvf(double out[])
   }
 }
 
+/*
 //Leray projection using multigrid solver.
 void Field::proj(double deg1ch[], double out[], double pressure[], double pressure_old[], double solution_old[])
 {
@@ -309,6 +307,7 @@ void Field::proj(double deg1ch[], double out[], double pressure[], double pressu
   double tot;
   double avg;
   double thresh = 1.0e-15;
+
   bd10(deg1ch,pressure);
 
   for(int i=0; i<(L*W*H); i++) temp[i]=pressure[i];
@@ -358,7 +357,6 @@ void Field::proj(double deg1ch[], double out[], double pressure[], double pressu
 
 }
 
-
 // Computes proj(Vf wedge vf) - nu*Laplacian(V), where proj is the Leray projection.
 void Field::nav_stoke(double Vfvf_res[], double out[], double pressure[], double pressure_old[], double solution_old[]) 
 {
@@ -368,3 +366,4 @@ void Field::nav_stoke(double Vfvf_res[], double out[], double pressure[], double
   laplacian(Vfvf_res); //add the Laplace term. This can be done either before or after the Leray projection.
   proj(Vfvf_res, out, pressure, pressure_old, solution_old);
 }
+*/
