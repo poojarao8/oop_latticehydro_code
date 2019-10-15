@@ -144,7 +144,6 @@ void Field::periodic_bdry()
     }
   }
 
-
   // Update the zlower bdry
   for (int i = 0; i < 0; ++i) {
     for (int j = 0; j < GW; ++j) { 
@@ -297,17 +296,18 @@ void Field::dVfvf(double out[])
   }
 }
 
-/*
+
 //Leray projection using multigrid solver.
 void Field::proj(double deg1ch[], double out[], double pressure[], double pressure_old[], double solution_old[])
 {
-  level_t& b = *(new level_t);
-  level_t& x = *(new level_t);
+  using level_t = level<Real, LL, WW, HH, _LEVELS>;
+  //level_t& b = *(new level_t);
+  //level_t& x = *(new level_t);
   double *temp= new double[L*W*H];
   double tot;
   double avg;
   double thresh = 1.0e-15;
-
+  /*
   bd10(deg1ch,pressure);
 
   for(int i=0; i<(L*W*H); i++) temp[i]=pressure[i];
@@ -350,14 +350,16 @@ void Field::proj(double deg1ch[], double out[], double pressure[], double pressu
   d01(pressure,out);
 
   for(int i=0; i<ARR_SIZE; i++) out[i] = deg1ch[i] - out[i];
-
+  
   delete &x;
   delete &b;
   delete[] temp;
 
+  */
 }
 
 // Computes proj(Vf wedge vf) - nu*Laplacian(V), where proj is the Leray projection.
+
 void Field::nav_stoke(double Vfvf_res[], double out[], double pressure[], double pressure_old[], double solution_old[]) 
 {
   double recipr = 1.0/(2.0*obj->dx);
@@ -366,4 +368,4 @@ void Field::nav_stoke(double Vfvf_res[], double out[], double pressure[], double
   laplacian(Vfvf_res); //add the Laplace term. This can be done either before or after the Leray projection.
   proj(Vfvf_res, out, pressure, pressure_old, solution_old);
 }
-*/
+

@@ -19,6 +19,8 @@ class Field
     void laplacian(double out[]); 
     void dVfvf(double out[]); // non-linear term
     void update_bdry(char bdry); // apply boundary on guard cells
+    void proj(double deg1ch[], double out[], double pressure[], double pressure_old[], double solution_old[]);
+    void nav_stoke(double Vfvf_res[], double out[], double pressure[], double pressure_old[], double solution_old[]); 
 
   private:
     int BTYPE;
