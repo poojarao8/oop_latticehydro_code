@@ -7,29 +7,30 @@ class Grid;
 
 class Field
 {
-  public:
-    Field(int, Grid *, int); // constructor
-    ~Field(); // destructor
-    int I(int, int, int, int);
-    double* arr; 
-    void initialize();  
-    void bd(double out[]); //curl
-    void bd10(double out[]); // divergence
-    void d01(double out[]); // gradient
-    void laplacian(double out[]); 
-    void dVfvf(double out[]); // non-linear term
-    void update_bdry(char bdry); // apply boundary on guard cells
-    void proj(double deg1ch[], double out[], double pressure[], double pressure_old[], double solution_old[]);
-    void nav_stoke(double Vfvf_res[], double out[], double pressure[], double pressure_old[], double solution_old[]); 
-
   private:
-    int BTYPE;
-    int NSIZE; // 1 or 3 depending on scalar or vector
-    int ARR_SIZE;
-    Grid *obj;
-    void periodic_bdry();
+    // grid info 
     int L, W, H;
     int GL, GW, GH;
+    int NSIZE; // 1 or 3 depending on scalar or vector
+    int ARR_SIZE;
+
+    // bdry update and indexing function
+    void periodic_bdry();
+
+    // lattice calculus functions
+    void bd(double*); //curl
+    void bd10(double*); // divergence
+    void d01(double*); // gradient
+    void laplacian(double*); 
+
+  public:
+    Field(int, Grid *); // constructor
+    ~Field(); // destructor
+    Grid *obj;
+    double* arr; 
+    int I(int, int, int, int); // indexing function
+    void initialize();  
+    void update_bdry(char); // apply boundary on guard cells
 };
 
 #endif

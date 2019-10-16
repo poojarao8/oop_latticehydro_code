@@ -3,7 +3,7 @@
 
 using namespace std;
 
-Field::Field(int nsize, Grid *test, int btype)
+Field::Field(int nsize, Grid *test)
 {
   obj = test;
   L = obj->L;
@@ -13,7 +13,6 @@ Field::Field(int nsize, Grid *test, int btype)
   GW = obj->GW;
   GH = obj->GH;
 
-  BTYPE = btype;
   NSIZE = nsize;
   int BUFF_SIZE = (L+2*NGUARD)*(W+2*NGUARD)*(H+2*NGUARD);
   ARR_SIZE = nsize*BUFF_SIZE; 
@@ -223,9 +222,9 @@ void Field::d01(double out[])
 
         int ind = I(X,i,j,k);
         // PRAO: pay attention to the indices here to make sure that they stay consistent
-        out[ind] = -arr[I(0,i-1,j,k)] + arr[I(0,i+1,j,k)];
-        out[ind+1] = -arr[I(0,i,j-1,k)] + arr[I(0,i,j+1,k)];
-        out[ind+2] = -arr[I(0,i,j,k-1)] + arr[I(0,i,j,k+1)];
+        out[ind] = -this->arr[I(0,i-1,j,k)] + this->arr[I(0,i+1,j,k)];
+        out[ind+1] = -this->arr[I(0,i,j-1,k)] + this->arr[I(0,i,j+1,k)];
+        out[ind+2] = -this->arr[I(0,i,j,k-1)] + this->arr[I(0,i,j,k+1)];
       }
     }
   }
@@ -251,121 +250,14 @@ void Field::laplacian(double out[])
         up = I(0,i,j,k+2);
 
         //PRAO: should l's upper limit be obj->NSIZE?
-        for(int l=0; l<3; l++) {
-          out[center+l] += factor*(   6.0*arr[center+l] 
-                                    - arr[front+l] - arr[back+l] 
-                                    - arr[right+l] - arr[left+l] 
-                                    - arr[down+l] - arr[up+l]   );
+        for(int l = 0; l < NSIZE; l++) {
+          out[center+l] += factor*(   6.0*this->arr[center+l] 
+                                    - this->arr[front+l] - this->arr[back+l] 
+                                    - this->arr[right+l] - this->arr[left+l] 
+                                    - this->arr[down+l] - this->arr[up+l]   );
         }
       }
     }
   }
-}
-
-// Computation of the non-linear term d(Vf dot vf).
-void Field::dVfvf(double out[])
-{
-  for(int i=NGUARD; i<L+NGUARD; i++) { 
-    for(int j=NGUARD; j<W+NGUARD; j++) { 
-      for(int k=NGUARD; k<H+NGUARD; k++) {
-
-        double recipr = 1.0/(2.0*obj->dx); 
-        int ind = I(X,i,j,k);
-        out[ind] = recipr*(  arr[I(X,i+1,j,k)]*arr[I(X,i+1,j,k)] 
-                           - arr[I(X,i-1,j,k)]*arr[I(X,i-1,j,k)] 
-                           + arr[I(X,i,j+1,k)]*arr[I(Y,i,j+1,k)] 
-                           - arr[I(X,i,j-1,k)]*arr[I(Y,i,j-1,k)] 
-                           + arr[I(X,i,j,k+1)]*arr[I(Z,i,j,k+1)] 
-                           - arr[I(X,i,j,k-1)]*arr[I(Z,i,j,k-1)]  );
-
-        out[ind+1] = recipr*(  arr[I(Y,i+1,j,k)]*arr[I(X,i+1,j,k)] 
-                             - arr[I(Y,i-1,j,k)]*arr[I(X,i-1,j,k)] 
-                             + arr[I(Y,i,j+1,k)]*arr[I(Y,i,j+1,k)] 
-                             - arr[I(Y,i,j-1,k)]*arr[I(Y,i,j-1,k)] 
-                             + arr[I(Y,i,j,k+1)]*arr[I(Z,i,j,k+1)] 
-                             - arr[I(Y,i,j,k-1)]*arr[I(Z,i,j,k-1)]  );
-
-        out[ind+2] = recipr*(  arr[I(Z,i+1,j,k)]*arr[I(X,i+1,j,k)] 
-                             - arr[I(Z,i-1,j,k)]*arr[I(X,i-1,j,k)] 
-                             + arr[I(Z,i,j+1,k)]*arr[I(Y,i,j+1,k)] 
-                             - arr[I(Z,i,j-1,k)]*arr[I(Y,i,j-1,k)] 
-                             + arr[I(Z,i,j,k+1)]*arr[I(Z,i,j,k+1)] 
-                             - arr[I(Z,i,j,k-1)]*arr[I(Z,i,j,k-1)]  );
-      }
-    }
-  }
-}
-
-
-//Leray projection using multigrid solver.
-void Field::proj(double deg1ch[], double out[], double pressure[], double pressure_old[], double solution_old[])
-{
-  using level_t = level<Real, LL, WW, HH, _LEVELS>;
-  //level_t& b = *(new level_t);
-  //level_t& x = *(new level_t);
-  double *temp= new double[L*W*H];
-  double tot;
-  double avg;
-  double thresh = 1.0e-15;
-  /*
-  bd10(deg1ch,pressure);
-
-  for(int i=0; i<(L*W*H); i++) temp[i]=pressure[i];
-  for(int i=0; i<(L*W*H); i++) pressure[i] -= pressure_old[i];
-
-  int octal;
-  int K;
-  for(int b1=0; b1<2; b1++) {for(int b2=0; b2<2; b2++) {for(int b3=0; b3<2; b3++) {
-  octal=b1*4+b2*2+b3; //Loop over 8 octal
-  tot=0.0;
-  for(int i=0; i<LL; i++) {
-    for(int j=0; j<WW; j++) {
-      for(int k=0; k<HH; k++) {
-
-        b.dat.at(i,j,k)=pressure[(i*2+b1)*W*H+(j*2+b2)*H+k*2+b3];
-        tot += b.dat.at(i,j,k);
-      }
-    }
-  }
-  if (abs(tot)>1.0e-17) {thresh= abs(tot)*10;}
-  else  {thresh= 1.0e-15;}
-
-  //cout << "octal: " << octal <<endl;
-  //cout << "total: " <<tot <<endl;
-  K=Slash(b, x, 15, 500, thresh);
-  //cout<<"Multigrid solver applied "<<K<<" times"<<endl;
-    for(int i=0; i<LL; i++) {
-      for(int j=0; j<WW; j++) {
-        for(int k=0; k<HH; k++) {
-          pressure[(i*2+b1)*W*H+(j*2+b2)*H+k*2+b3]=  x.dat.at(i,j,k);
-        }
-      }
-    }
-  }}}
-
-  for(int i=0; i<(L*W*H); i++) pressure[i]+=solution_old[i];
-  for(int i=0; i<(L*W*H); i++) pressure_old[i]=temp[i];
-  for(int i=0; i<(L*W*H); i++) solution_old[i]=pressure[i];
-
-  d01(pressure,out);
-
-  for(int i=0; i<ARR_SIZE; i++) out[i] = deg1ch[i] - out[i];
-  
-  delete &x;
-  delete &b;
-  delete[] temp;
-
-  */
-}
-
-// Computes proj(Vf wedge vf) - nu*Laplacian(V), where proj is the Leray projection.
-
-void Field::nav_stoke(double Vfvf_res[], double out[], double pressure[], double pressure_old[], double solution_old[]) 
-{
-  double recipr = 1.0/(2.0*obj->dx);
-
-  dVfvf(Vfvf_res); //Vfvf_proj is used as a temporary array before applying diffuse()
-  laplacian(Vfvf_res); //add the Laplace term. This can be done either before or after the Leray projection.
-  proj(Vfvf_res, out, pressure, pressure_old, solution_old);
 }
 

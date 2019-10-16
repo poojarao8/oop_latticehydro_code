@@ -4,14 +4,15 @@ using namespace std;
 
 int main()
 {
-  Grid coarse_grid(32, 32, 32);
-  Grid fine_grid(64, 64, 64);
+  int nsteps = 1;
 
-  Field velocity(3, &coarse_grid, 0);
+  Grid coarse_grid(32, 32, 32);
+
+  Field velocity(3, &coarse_grid);
   velocity.initialize();
   velocity.update_bdry('PERIODIC');
 
-  Field pressure(1, &coarse_grid, 0);
+  Field pressure(1, &coarse_grid);
   pressure.initialize();
   pressure.update_bdry('PERIODIC');
 

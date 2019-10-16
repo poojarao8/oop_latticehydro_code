@@ -22,5 +22,6 @@ using namespace std;
 const double eta = 100.0;
 const double coef = 2.5;
 const double nu = 0.001;
+const double dt = 0.01;
 
 #endif

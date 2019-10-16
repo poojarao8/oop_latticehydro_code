@@ -3,7 +3,6 @@
 #include <type_traits>
 //#include <omp.h>
 #include <utility>
-//#include "visit_plot.h"
 
 using Real = double;
 constexpr size_t _NUMSTEPS = 20;
