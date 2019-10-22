@@ -3,16 +3,17 @@
 
 using namespace std;
 
-TimeIntegration::TimeIntegration(Field* obj_vel, Field* obj_pres, double delta_t, char method)
+TimeIntegration::TimeIntegration(Field* obj_vel, Field* obj_pres, double delta_t, char method):
+L(vel->obj->L),W(vel->obj->W),H(vel->obj->H)
 {
   T = 0.0;
   dt = delta_t;
   vel = obj_vel; 
   pres = obj_pres;
  
-  L = vel->obj->L;
-  W = vel->obj->W;
-  H = vel->obj->H;
+  //L = vel->obj->L;
+  //W = vel->obj->W;
+  //H = vel->obj->H;
  
   constexpr int LL = L/2;
   constexpr int WW = W/2;

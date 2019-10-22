@@ -10,8 +10,8 @@ class TimeIntegration
   private:
     double T;
     double dt;
-    int L, W, H;
-    int LL, WW, HH;
+    const int L, W, H;
+    //constexpr int LL, WW, HH;
     Field *vel;
     Field *pres;    
     // arrays for storing field values
