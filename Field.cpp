@@ -16,7 +16,7 @@ Field::Field(int nsize, Grid *test)
   NSIZE = nsize;
   int BUFF_SIZE = (L+2*NGUARD)*(W+2*NGUARD)*(H+2*NGUARD);
   ARR_SIZE = nsize*BUFF_SIZE; 
-  arr = new double[ARR_SIZE];
+  arr = new double[ARR_SIZE]; // for pressure or velocity
   cout << "Field object is being created" << endl;  
 }
 
@@ -212,6 +212,23 @@ void Field::bd10(double out[])
     }
   }
 }
+
+//FIXME: this is a temporary replication of the above function for non-linear term
+// Function for calculating divergence ( which is the boundary map of the 1-chain.) Outputs to a 0 chain of dimension L,W,H
+void Field::bd10_NL(double* deg1ch, double out[])
+{
+  for(int i=NGUARD; i<L+NGUARD; i++) {
+    for(int j=NGUARD; j<W+NGUARD; j++) {
+      for(int k=NGUARD; k<H+NGUARD; k++) {
+
+        out[I(X,i,j,k)] = deg1ch[I(X,i-1,j,k)] - deg1ch[I(X,i+1,j,k)]
+                        + deg1ch[I(Y,i,j-1,k)] - deg1ch[I(Y,i,j+1,k)]
+                        + deg1ch[I(Z,i,j,k-1)] - deg1ch[I(Z,i,j,k+1)];
+      }
+    }
+  }
+}
+
 
 // Function for calculating gradient ( which is the coboundary map of the 0-chain.) Outputs to a 1 chain of dimension L,W,H
 void Field::d01(double out[])

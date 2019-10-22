@@ -8,15 +8,25 @@ class Field;
 class TimeIntegration
 {
   private:
+    double T;
     double dt;
     int L, W, H;
-    Field *vobj;
-    Field *sobj;    
+    int LL, WW, HH;
+    Field *vel;
+    Field *pres;    
+    // arrays for storing field values
+    double* Vfvf_res; // for non-linear term
+    double* pressure_old; // pressure at previous iteration 
+    double* pressure_lap; // pressure laplacian at previous iteration
+    double* pressure_lap_old; // div of pressure from prev itr
+
+    void dVfvf(double*);
+    void proj(double*);
+    void nav_stoke(double*); 
 
   public:
     TimeIntegration(Field*, Field*, double, char); // constructor
     ~TimeIntegration(); // destructor
-    void dVfvf(double out[]); // non-linear term
     void time_stepping(char);
     void runge_kutta4();
 };

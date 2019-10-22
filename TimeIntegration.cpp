@@ -3,14 +3,27 @@
 
 using namespace std;
 
-TimeIntegration::TimeIntegration(Field* obj_vec, Field* obj_scl, double delta_t, char method)
+TimeIntegration::TimeIntegration(Field* obj_vel, Field* obj_pres, double delta_t, char method)
 {
+  T = 0.0;
   dt = delta_t;
-  vobj = obj_vec; 
-  sobj = obj_scl;
-  L = vobj->obj->L;
-  W = vobj->obj->W;
-  H = vobj->obj->H;
+  vel = obj_vel; 
+  pres = obj_pres;
+ 
+  L = vel->obj->L;
+  W = vel->obj->W;
+  H = vel->obj->H;
+ 
+  constexpr int LL = L/2;
+  constexpr int WW = W/2;
+  constexpr int HH = H/2;
+
+  double *Vfvf_res = new double[vel->ARR_SIZE];
+  double *pressure_old = new double[pres->ARR_SIZE];
+  double *pressure_lap = new double[pres->ARR_SIZE];
+  double *pressure_lap_old = new double[pres->ARR_SIZE];
+
+  using level_t = level<Real, LL, WW, HH, _LEVELS>;
 
   cout << "TimeIntegration object is being created" << endl;
 }
@@ -29,104 +42,105 @@ void TimeIntegration::dVfvf(double out[])
     for(int j=NGUARD; j<W+NGUARD; j++) {
       for(int k=NGUARD; k<H+NGUARD; k++) {
 
-        double recipr = 1.0/(2.0*vobj->obj->dx);
-        int ind = vobj->I(X,i,j,k);
-        out[ind] = recipr*(  vobj->arr[vobj->I(X,i+1,j,k)] * vobj->arr[vobj->I(X,i+1,j,k)]
-                           - vobj->arr[vobj->I(X,i-1,j,k)] * vobj->arr[vobj->I(X,i-1,j,k)]
-                           + vobj->arr[vobj->I(X,i,j+1,k)] * vobj->arr[vobj->I(Y,i,j+1,k)]
-                           - vobj->arr[vobj->I(X,i,j-1,k)] * vobj->arr[vobj->I(Y,i,j-1,k)]
-                           + vobj->arr[vobj->I(X,i,j,k+1)] * vobj->arr[vobj->I(Z,i,j,k+1)]
-                           - vobj->arr[vobj->I(X,i,j,k-1)] * vobj->arr[vobj->I(Z,i,j,k-1)]  );
+        double recipr = 1.0/(2.0*vel->obj->dx);
+        int ind = vel->I(X,i,j,k);
+        out[ind] = recipr*(  vel->arr[vel->I(X,i+1,j,k)] * vel->arr[vel->I(X,i+1,j,k)]
+                           - vel->arr[vel->I(X,i-1,j,k)] * vel->arr[vel->I(X,i-1,j,k)]
+                           + vel->arr[vel->I(X,i,j+1,k)] * vel->arr[vel->I(Y,i,j+1,k)]
+                           - vel->arr[vel->I(X,i,j-1,k)] * vel->arr[vel->I(Y,i,j-1,k)]
+                           + vel->arr[vel->I(X,i,j,k+1)] * vel->arr[vel->I(Z,i,j,k+1)]
+                           - vel->arr[vel->I(X,i,j,k-1)] * vel->arr[vel->I(Z,i,j,k-1)]  );
 
-        out[ind+1] = recipr*(  vobj->arr[vobj->I(Y,i+1,j,k)] * vobj->arr[vobj->I(X,i+1,j,k)]
-                             - vobj->arr[vobj->I(Y,i-1,j,k)] * vobj->arr[vobj->I(X,i-1,j,k)]
-                             + vobj->arr[vobj->I(Y,i,j+1,k)] * vobj->arr[vobj->I(Y,i,j+1,k)]
-                             - vobj->arr[vobj->I(Y,i,j-1,k)] * vobj->arr[vobj->I(Y,i,j-1,k)]
-                             + vobj->arr[vobj->I(Y,i,j,k+1)] * vobj->arr[vobj->I(Z,i,j,k+1)]
-                             - vobj->arr[vobj->I(Y,i,j,k-1)] * vobj->arr[vobj->I(Z,i,j,k-1)]  );
+        out[ind+1] = recipr*(  vel->arr[vel->I(Y,i+1,j,k)] * vel->arr[vel->I(X,i+1,j,k)]
+                             - vel->arr[vel->I(Y,i-1,j,k)] * vel->arr[vel->I(X,i-1,j,k)]
+                             + vel->arr[vel->I(Y,i,j+1,k)] * vel->arr[vel->I(Y,i,j+1,k)]
+                             - vel->arr[vel->I(Y,i,j-1,k)] * vel->arr[vel->I(Y,i,j-1,k)]
+                             + vel->arr[vel->I(Y,i,j,k+1)] * vel->arr[vel->I(Z,i,j,k+1)]
+                             - vel->arr[vel->I(Y,i,j,k-1)] * vel->arr[vel->I(Z,i,j,k-1)]  );
 
-        out[ind+2] = recipr*(  vobj->arr[vobj->I(Z,i+1,j,k)] * vobj->arr[vobj->I(X,i+1,j,k)]
-                             - vobj->arr[vobj->I(Z,i-1,j,k)] * vobj->arr[vobj->I(X,i-1,j,k)]
-                             + vobj->arr[vobj->I(Z,i,j+1,k)] * vobj->arr[vobj->I(Y,i,j+1,k)]
-                             - vobj->arr[vobj->I(Z,i,j-1,k)] * vobj->arr[vobj->I(Y,i,j-1,k)]
-                             + vobj->arr[vobj->I(Z,i,j,k+1)] * vobj->arr[vobj->I(Z,i,j,k+1)]
-                             - vobj->arr[vobj->I(Z,i,j,k-1)] * vobj->arr[vobj->I(Z,i,j,k-1)]  );
+        out[ind+2] = recipr*(  vel->arr[vel->I(Z,i+1,j,k)] * vel->arr[vel->I(X,i+1,j,k)]
+                             - vel->arr[vel->I(Z,i-1,j,k)] * vel->arr[vel->I(X,i-1,j,k)]
+                             + vel->arr[vel->I(Z,i,j+1,k)] * vel->arr[vel->I(Y,i,j+1,k)]
+                             - vel->arr[vel->I(Z,i,j-1,k)] * vel->arr[vel->I(Y,i,j-1,k)]
+                             + vel->arr[vel->I(Z,i,j,k+1)] * vel->arr[vel->I(Z,i,j,k+1)]
+                             - vel->arr[vel->I(Z,i,j,k-1)] * vel->arr[vel->I(Z,i,j,k-1)]  );
       }
     }
   }
  
 }
 
-/*
-
 //Leray projection using multigrid solver.
-void proj(double deg1ch[], double out[], double pressure[], double pressure_old[], double solution_old[]){
+void TimeIntegration::proj(double out[])
+{
   level_t& b = *(new level_t);
   level_t& x = *(new level_t);
-  double *temp= new double[L*W*H];
+
+  double *temp= new double[pres->ARR_SIZE];
   double tot;
   double avg;
   double thresh = 1.0e-15;
-  bd10(deg1ch,pressure);
 
-  for(int i=0; i<(L*W*H); i++) temp[i]=pressure[i];
-  for(int i=0; i<(L*W*H); i++) pressure[i] -= pressure_old[i];
+  // Vfvf is the non-linear term
+  // bd10 is the div function for 
+  vel->bd10_NL(Vfvf_res, pressure_lap);
 
-int octal;
-int K;
-for(int b1=0; b1<2; b1++) {for(int b2=0; b2<2; b2++) {for(int b3=0; b3<2; b3++) {
-octal=b1*4+b2*2+b3; //Loop over 8 octal
-tot=0.0;
-  for(int i=0; i<LL; i++) {
-    for(int j=0; j<WW; j++) {
-      for(int k=0; k<HH; k++) {
+  for(int i=0; i<(pres->ARR_SIZE); i++) temp[i] = pressure_lap[i];
+  for(int i=0; i<(pres->ARR_SIZE); i++) pressure_lap[i] -= pressure_lap_old[i];
 
-        b.dat.at(i,j,k)=pressure[(i*2+b1)*W*H+(j*2+b2)*H+k*2+b3];
-        tot += b.dat.at(i,j,k);
+  int octal;
+  int K;
+  for(int b1=0; b1<2; b1++) {for(int b2=0; b2<2; b2++) {for(int b3=0; b3<2; b3++) {
+  octal=b1*4+b2*2+b3; //Loop over 8 octal
+  tot=0.0;
+    for(int i=0; i<pres->obj->L/2; i++) {
+      for(int j=0; j<pres->obj->W/2; j++) {
+        for(int k=0; k<pres->obj->H/2; k++) {
+
+          b.dat.at(i,j,k)=pressure_lap[(i*2+b1)*W*H+(j*2+b2)*H+k*2+b3];
+          tot += b.dat.at(i,j,k);
+        }
       }
     }
-  }
-if (abs(tot)>1.0e-17) {thresh= abs(tot)*10;}
-else  {thresh= 1.0e-15;}
+    if (abs(tot)>1.0e-17) {thresh= abs(tot)*10;}
+    else  {thresh= 1.0e-15;}
 
-//cout << "octal: " << octal <<endl;
-//cout << "total: " <<tot <<endl;
-  K=Slash(b, x, 15, 500, thresh);
-  //cout<<"Multigrid solver applied "<<K<<" times"<<endl;
-    for(int i=0; i<LL; i++) {
-      for(int j=0; j<WW; j++) {
-        for(int k=0; k<HH; k++) {
-          pressure[(i*2+b1)*W*H+(j*2+b2)*H+k*2+b3]=  x.dat.at(i,j,k);
+    //cout << "octal: " << octal <<endl;
+    //cout << "total: " <<tot <<endl;
+    K = Slash(b, x, 15, 500, thresh);
+    //cout<<"Multigrid solver applied "<<K<<" times"<<endl;
+    for(int i=0; i<pres->obj->L/2; i++) {
+      for(int j=0; j<pres->obj->W/2; j++) {
+        for(int k=0; k<pres->obj->H/2; k++) {
+          pres->arr[(i*2+b1)*pres->obj->W*pres->obj->H+(j*2+b2)*pres->obj->H+k*2+b3] = x.dat.at(i,j,k);
         }
       }
     }
   }}}
 
-  for(int i=0; i<(L*W*H); i++) pressure[i]+=solution_old[i];
-  for(int i=0; i<(L*W*H); i++) pressure_old[i]=temp[i];
-  for(int i=0; i<(L*W*H); i++) solution_old[i]=pressure[i];
+  for(int i=0; i<pres->ARR_SIZE; i++) pressure_lap[i] += pressure_lap_old[i];
+  for(int i=0; i<pres->ARR_SIZE; i++) pressure_lap_old[i] = temp[i];
+  for(int i=0; i<pres->ARR_SIZE; i++) pressure_old[i] = pres->arr[i];
 
-    d01(pressure,out);
+  pres->d01(out);
 
-    for(int i=0; i<ARR_SIZE; i++) out[i] = deg1ch[i] - out[i];
+  for(int i=0; i< vel->ARR_SIZE; i++) out[i] = Vfvf_res[i] - out[i];
 
-    delete &x;
-    delete &b;
-    delete[] temp;
+  delete &x;
+  delete &b;
+  delete[] temp;
 
-  }
+}
 
 // Computes proj(Vf wedge vf) - nu*Laplacian(V), where proj is the Leray projection.
-void nav_stoke(double h,double nu,double V[], double Vfvf_res[], double out[], double pressure[], double pressure_old[], double solution_old[]) {
-      double recipr = 1.0/(2.0*h);
+void TimeIntegration::nav_stoke(double out[]) 
+{
+  dVfvf(Vfvf_res); //Vfvf_proj is used as a temporary array before applying diffuse()
+  vel->laplacian(Vfvf_res); //add the Laplace term. This can be done either before or after the Leray projection.
+  proj(out); // pressure projection
+}
 
-      dVfvf(recipr,V, Vfvf_res); //Vfvf_proj is used as a temporary array before applying diffuse()
-      addLaplacian(V,Vfvf_res,nu,h); //add the Laplace term. This can be done either before or after the Leray projection.
-      proj(Vfvf_res, out, pressure, pressure_old, solution_old);
-    }
 
-
-*/
 void TimeIntegration::time_stepping(char method)
 {
   switch(method)
@@ -144,22 +158,22 @@ void TimeIntegration::time_stepping(char method)
 
 void TimeIntegration::runge_kutta4()
 {
- /* 
-  nav_stoke(h, nu, V, Vfvf_res, R, scal, pressure_old,
-      solution_old);  // scal is pressure.
-  for (int i = 0; i < ARR_SIZE; i++) temp[i] = V[i] + R[i] * dt * 0.5;
-  for (int i = 0; i < ARR_SIZE; i++)
+  double *R = new double[vel->ARR_SIZE];
+  double *temp = new double[vel->ARR_SIZE]; 
+  double *Total = new double[vel->ARR_SIZE];
+  nav_stoke(R);
+  for (int i = 0; i < vel->ARR_SIZE; i++) temp[i] = vel->arr[i] + R[i] * dt * 0.5;
+  for (int i = 0; i < vel->ARR_SIZE; i++)
     Total[i] = R[i];  // separate loop to make compiler to use SIMD
-  nav_stoke(h, nu, temp, Vfvf_res, R, scal, pressure_old, solution_old);
-  for (int i = 0; i < ARR_SIZE; i++) temp[i] = V[i] + R[i] * dt * 0.5;
-  for (int i = 0; i < ARR_SIZE; i++) Total[i] += 2 * R[i];
-  nav_stoke(h, nu, temp, Vfvf_res, R, scal, pressure_old, solution_old);
-  for (int i = 0; i < ARR_SIZE; i++) temp[i] = V[i] + R[i] * dt;
-  for (int i = 0; i < ARR_SIZE; i++) Total[i] += 2 * R[i];
-  nav_stoke(h, nu, temp, Vfvf_res, R, scal, pressure_old, solution_old);
-  for (int i = 0; i < ARR_SIZE; i++) Total[i] += R[i];
-  for (int i = 0; i < ARR_SIZE; i++) V[i] += Total[i] * (dt / 6);
-  t += dt;
-  */
+  nav_stoke(R);
+  for (int i = 0; i < vel->ARR_SIZE; i++) temp[i] = vel->arr[i] + R[i] * dt * 0.5;
+  for (int i = 0; i < vel->ARR_SIZE; i++) Total[i] += 2 * R[i];
+  nav_stoke(R);
+  for (int i = 0; i < vel->ARR_SIZE; i++) temp[i] = vel->arr[i] + R[i] * dt;
+  for (int i = 0; i < vel->ARR_SIZE; i++) Total[i] += 2 * R[i];
+  nav_stoke(R);
+  for (int i = 0; i < vel->ARR_SIZE; i++) Total[i] += R[i];
+  for (int i = 0; i < vel->ARR_SIZE; i++) vel->arr[i] += Total[i] * (dt / 6.0);
+  T += dt;
 }
 
