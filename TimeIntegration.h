@@ -10,7 +10,7 @@ class TimeIntegration
   private:
     double T;
     double dt;
-    const int L, W, H;
+    int L, W, H;
     //constexpr int LL, WW, HH;
     Field *vel;
     Field *pres;    

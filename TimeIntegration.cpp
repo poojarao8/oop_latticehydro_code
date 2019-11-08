@@ -11,20 +11,21 @@ L(vel->obj->L),W(vel->obj->W),H(vel->obj->H)
   vel = obj_vel; 
   pres = obj_pres;
  
-  //L = vel->obj->L;
-  //W = vel->obj->W;
-  //H = vel->obj->H;
+  L = vel->obj->L;
+  W = vel->obj->W;
+  H = vel->obj->H;
  
   constexpr int LL = L/2;
   constexpr int WW = W/2;
   constexpr int HH = H/2;
+  
 
   double *Vfvf_res = new double[vel->ARR_SIZE];
   double *pressure_old = new double[pres->ARR_SIZE];
   double *pressure_lap = new double[pres->ARR_SIZE];
   double *pressure_lap_old = new double[pres->ARR_SIZE];
 
-  using level_t = level<Real, LL, WW, HH, _LEVELS>;
+  //using level_t = level<Real, LL, WW, HH, _LEVELS>;
 
   cout << "TimeIntegration object is being created" << endl;
 }
@@ -72,7 +73,7 @@ void TimeIntegration::dVfvf(double out[])
 }
 
 //Leray projection using multigrid solver.
-void TimeIntegration::proj(double out[])
+/*void TimeIntegration::proj(double out[])
 {
   level_t& b = *(new level_t);
   level_t& x = *(new level_t);
@@ -98,7 +99,7 @@ void TimeIntegration::proj(double out[])
       for(int j=0; j<pres->obj->W/2; j++) {
         for(int k=0; k<pres->obj->H/2; k++) {
 
-          b.dat.at(i,j,k)=pressure_lap[(i*2+b1)*W*H+(j*2+b2)*H+k*2+b3];
+          b.dat.at(i,j,k) = pressure_lap[(i*2+b1)*W*H+(j*2+b2)*H+k*2+b3];
           tot += b.dat.at(i,j,k);
         }
       }
@@ -132,15 +133,14 @@ void TimeIntegration::proj(double out[])
   delete[] temp;
 
 }
-
+*/
 // Computes proj(Vf wedge vf) - nu*Laplacian(V), where proj is the Leray projection.
 void TimeIntegration::nav_stoke(double out[]) 
 {
   dVfvf(Vfvf_res); //Vfvf_proj is used as a temporary array before applying diffuse()
   vel->laplacian(Vfvf_res); //add the Laplace term. This can be done either before or after the Leray projection.
-  proj(out); // pressure projection
+  //proj(out); // pressure projection
 }
-
 
 void TimeIntegration::time_stepping(char method)
 {
