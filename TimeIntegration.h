@@ -29,6 +29,8 @@ class TimeIntegration
     ~TimeIntegration(); // destructor
     void time_stepping(char);
     void runge_kutta4();
+    void forward_euler();
+    void pressure_solve(MPI_Comm, double*, double* );
 };
 
 #endif

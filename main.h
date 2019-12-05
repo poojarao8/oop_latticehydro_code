@@ -3,9 +3,10 @@
 
 #include <iostream>
 #include <cmath>
+#include <mpi.h>
+#include "HYPRE_struct_ls.h"
 #include "Grid.h"
 #include "Field.h"
-#include "solver.h"
 #include "TimeIntegration.h"
 
 #define X 0
@@ -19,6 +20,7 @@
 
 using namespace std;
 
+const int nsteps = 1;
 const double eta = 100.0;
 const double coef = 2.5;
 const double nu = 0.001;
