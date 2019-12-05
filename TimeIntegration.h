@@ -25,7 +25,7 @@ class TimeIntegration
     void nav_stoke(double*); 
 
   public:
-    TimeIntegration(Field*, Field*, double, char); // constructor
+    TimeIntegration(Field*, Field*, double); // constructor
     ~TimeIntegration(); // destructor
     void time_stepping(char);
     void runge_kutta4();

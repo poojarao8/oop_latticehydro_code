@@ -4,13 +4,14 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  // Initialize the grid
+  // Initialize grid
   Grid coarse_grid(32, 32, 32);
 
   // Initialize velocity
   Field velocity(3, &coarse_grid);
   velocity.initialize();
-  velocity.update_bdry('PERIODIC');
+  //velocity.update_bdry('PERIODIC');
+  velocity.update_bdry('EULER');
 
   // Initialize pressure
   Field pressure(1, &coarse_grid);
@@ -19,7 +20,7 @@ int main(int argc, char *argv[])
 
   // Initialize a time integration object
   double dt = 0.01;
-  TimeIntegration ts(velocity, pressure, dt, 'EULER');
+  TimeIntegration ts(velocity, pressure, dt);
 
   // Propagate in time
   for (int itr = 0; itr < nsteps; itr++)
