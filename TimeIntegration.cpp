@@ -3,7 +3,7 @@
 
 using namespace std;
 
-TimeIntegration::TimeIntegration(Field* obj_vel, Field* obj_pres, double delta_t, int method_name):
+TimeIntegration::TimeIntegration(Field* obj_vel, Field* obj_pres, double delta_t, char method_name):
 L(vel->obj->L),W(vel->obj->W),H(vel->obj->H)
 {
   T = 0.0;
