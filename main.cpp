@@ -1,39 +1,38 @@
 #include "main.h"
 
-using namespace std;
 
 int main(int argc, char *argv[])
 {
   // Initialize grid
-  Grid coarse_grid(32, 32, 32);
+  Grid coarse_grid(16, 16, 16);
 
   // Initialize velocity
   Field velocity(3, &coarse_grid);
   velocity.initialize();
-  //velocity.update_bdry('PERIODIC');
-  velocity.update_bdry('EULER');
+  velocity.update_bdry('PERIODIC');
 
   // Initialize pressure
   Field pressure(1, &coarse_grid);
   pressure.initialize();
   pressure.update_bdry('PERIODIC');
 
-  // Initialize a time integration object
+  // Initialize time integration object
   double dt = 0.01;
-  TimeIntegration ts(velocity, pressure, dt);
+  double T = 0.0;
+  TimeIntegration ts(&velocity, &pressure, dt);
 
   // Propagate in time
   for (int itr = 0; itr < nsteps; itr++)
   {
    // Pick a time-stepping scheme out of EULER, RK2 and RK4 (later)
-   //ts.forward_euler(); 
+   ts.time_stepping('EULER'); 
 
    // Increment the time  
-  
+   T += dt;  
   }
 
   // Initialize MPI
-  int numprocs, numprocs_dir[NDIMS], rank;
+  /*int numprocs, numprocs_dir[NDIMS], rank;
   int periodic[NDIMS], reorder = 0;
   int nbrs[2*NDIMS], coords[NDIMS];
 
@@ -67,6 +66,6 @@ int main(int argc, char *argv[])
   
   // Finalize MPI
    MPI_Finalize();
-
+  */
   return 0;
 }

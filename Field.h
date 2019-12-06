@@ -1,7 +1,6 @@
 #ifndef Field_h
 #define Field_h
 
-#include "Grid.h"
 
 class Grid;
 

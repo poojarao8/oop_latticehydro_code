@@ -1,7 +1,4 @@
 #include "main.h"
-#include "Field.h"
-
-using namespace std;
 
 Field::Field(int nsize, Grid *test)
 {

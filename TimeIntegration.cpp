@@ -1,12 +1,7 @@
 #include "main.h"
-#include "Field.h"
 
-using namespace std;
-
-TimeIntegration::TimeIntegration(Field* obj_vel, Field* obj_pres, double delta_t)//:
-//L(vel->obj->L),W(vel->obj->W),H(vel->obj->H)
+TimeIntegration::TimeIntegration(Field* obj_vel, Field* obj_pres, double delta_t)
 {
-  T = 0.0;
   dt = delta_t;
   vel = obj_vel; 
   pres = obj_pres;
@@ -14,13 +9,7 @@ TimeIntegration::TimeIntegration(Field* obj_vel, Field* obj_pres, double delta_t
   L = vel->obj->L;
   W = vel->obj->W;
   H = vel->obj->H;
- 
-  int LL = L/2;
-  int WW = W/2;
-  int HH = H/2;
-  
 
-  double *Vfvf_res = new double[vel->ARR_SIZE];
   cout << "TimeIntegration object is being created" << endl;
 }
 
@@ -29,11 +18,33 @@ TimeIntegration::~TimeIntegration(void)
   cout << "Field object is being deleted" << endl;
 }
 
+//PRAO: this is temporary
+// w refers to x or y or z components
+// w is 0 for scalars
+int TimeIntegration::I(int w, int i, int j, int k, int NSIZE)
+{
+  return (i*W*H*NSIZE + j*H*NSIZE + k*NSIZE + w);
+}
+
+//PRAO: this is temporary
+// Function for calculating divergence (which is the boundary map of the 1-chain.) Outputs to a 0 chain of dimension L,W,H
+void TimeIntegration::bd10(double* in_arr, double* out)
+{
+  for(int i=NGUARD; i<L+NGUARD; i++) {
+    for(int j=NGUARD; j<W+NGUARD; j++) {
+      for(int k=NGUARD; k<H+NGUARD; k++) {
+
+        out[I(X,i,j,k,1)] = in_arr[I(X,i-1,j,k,3)] - in_arr[I(X,i+1,j,k,3)]
+                        + in_arr[I(Y,i,j-1,k,3)] - in_arr[I(Y,i,j+1,k,3)]
+                        + in_arr[I(Z,i,j,k-1,3)] - in_arr[I(Z,i,j,k+1,3)];
+      }
+    }
+  }
+}
 
 // Computation of the non-linear term d(Vf dot vf).
-void TimeIntegration::dVfvf(double out[])
+void TimeIntegration::dVfvf(double* out)
 {
- 
   for(int i=NGUARD; i<L+NGUARD; i++) {
     for(int j=NGUARD; j<W+NGUARD; j++) {
       for(int k=NGUARD; k<H+NGUARD; k++) {
@@ -41,10 +52,10 @@ void TimeIntegration::dVfvf(double out[])
         double recipr = 1.0/(2.0*vel->obj->dx);
         int ind = vel->I(X,i,j,k);
         out[ind] = recipr*(  vel->arr[vel->I(X,i+1,j,k)] * vel->arr[vel->I(X,i+1,j,k)]
-                   - vel->arr[vel->I(X,i-1,j,k)] * vel->arr[vel->I(X,i-1,j,k)]
+                   - vel->arr[vel->I(X,i-1,j,k)] * vel->arr[vel->I(X,i-1,j,k)] 
                    + vel->arr[vel->I(X,i,j+1,k)] * vel->arr[vel->I(Y,i,j+1,k)]
                    - vel->arr[vel->I(X,i,j-1,k)] * vel->arr[vel->I(Y,i,j-1,k)]
-                   + vel->arr[vel->I(X,i,j,k+1)] * vel->arr[vel->I(Z,i,j,k+1)]
+                   + vel->arr[vel->I(X,i,j,k+1)] * vel->arr[vel->I(Z,i,j,k+1)] 
                    - vel->arr[vel->I(X,i,j,k-1)] * vel->arr[vel->I(Z,i,j,k-1)]  );
 
         out[ind+1] = recipr*(  vel->arr[vel->I(Y,i+1,j,k)] * vel->arr[vel->I(X,i+1,j,k)]
@@ -66,7 +77,7 @@ void TimeIntegration::dVfvf(double out[])
  
 }
 
-//Leray projection using multigrid solver.
+//Leray projection using multigrid solver (Boomer AMG) in HYPRE
 void TimeIntegration::pressure_solve(MPI_Comm mpi_comm, double* div_vstar, double* pressure)
 {
   // setup hypre data structures here
@@ -103,6 +114,7 @@ void TimeIntegration::pressure_solve(MPI_Comm mpi_comm, double* div_vstar, doubl
 // Computes (Vf wedge vf) - nu*Laplacian(V)
 void TimeIntegration::nav_stoke(double out[]) 
 {
+  double *Vfvf_res = new double[vel->ARR_SIZE];
   dVfvf(Vfvf_res); // calculate the non-linear term
   vel->laplacian(Vfvf_res); // add the laplacian term
 }
@@ -128,16 +140,19 @@ void TimeIntegration::time_stepping(char method)
 
 void TimeIntegration::forward_euler() 
 { 
-  double *R = new double[vel->ARR_SIZE];
-  double *vstar = new double[vel->ARR_SIZE]; 
+  double *R = new double[vel->ARR_SIZE]; //vector field
+  double *vstar = new double[vel->ARR_SIZE]; //vector field
+  double *div_vstar = new double[pres->ARR_SIZE]; //scalar field
 
   nav_stoke(R); // sum of non-linear and laplacian terms
   for (int i = 0; i < vel->ARR_SIZE; i++) vstar[i] = vel->arr[i] - R[i] * dt;
+
   // calculate divergence of the intermediate velocity
   //PRAO: How do I make it so bd10 can calculate the divergence of the intermediare velocity?
-  //bd10(vstar, div_vstar); 
+  bd10(vstar, div_vstar); 
+
   // pass the divergence of vstar in the pressure solve
-  T += dt;
+  
 }
 
 
