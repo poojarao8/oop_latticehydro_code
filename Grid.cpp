@@ -1,8 +1,4 @@
-#include <iostream>
 #include "main.h"
-#include "Grid.h" 
-
-using namespace std;
 
 Grid::Grid(int l, int w, int h)
 {
@@ -17,8 +13,7 @@ Grid::Grid(int l, int w, int h)
   GW = W + 2*NGUARD;
   GH = H + 2*NGUARD; 
 
-  cout << "Object is being created" << endl;
-  cout << "dx = " << dx << endl;  
+  cout << "Grid object is being created" << endl;
 }
 
 Grid::~Grid(void)

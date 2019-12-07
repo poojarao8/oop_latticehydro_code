@@ -29,9 +29,9 @@ CFLAGS = -g -Wall -Wextra
 #FFTW3_LIB=-L$(FFTW3_DIR)/lib -lfftw3_mpi -lfftw3 -lm
 #FFTW3_INC=-I$(FFTW3_DIR)/include
 
-#HYPRE_DIR=/home/prao/software/hypre/src/hypre
-#HYPRE_LIB=-L$(HYPRE_DIR)/lib -lHYPRE -lm
-#HYPRE_INC=-I$(HYPRE_DIR)/include
+HYPRE_DIR=/home/prao/software/hypre/src/hypre
+HYPRE_LIB=-L$(HYPRE_DIR)/lib -lHYPRE -lm
+HYPRE_INC=-I$(HYPRE_DIR)/include
 
 endif
 ########################################################################
