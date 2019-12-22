@@ -76,92 +76,77 @@ void Field::update_bdry(char bdry)
 void Field::periodic_bdry()
 {
   int w = 0; //FIXME: hardcoded for scalar array update
-  // Update the xlower bdry
+  // Update the x-bdry
   for (int i = 0; i < NGUARD; ++i) {
     for (int j = 0; j < GW; ++j) { 
       for (int k = 0; k < GH; ++k) {
 
         // FIXME: add weight to the constructor
-
+        // lower bdry update
         int ind_guard = I(w, i, j, k);
         int ind_int = I(w,i+L,j,k);
 
         // this updates x, y and z components for vector arrays
         for (int ii=0; ii<NSIZE; ++ii)
           this->arr[ind_guard+ii] = this->arr[ind_int+ii];
-          
-      }
-    }
-  }
 
-  // Update the xupper bdry
-  for (int i = GL-NGUARD; i < GL; ++i) {
-    for (int j = 0; j < GW; ++j) {
-      for (int k = 0; k < GH; ++k) {
-
-        int ind_guard = I(w, i, j, k);
-        int ind_int = I(w,i-L,j,k);
-
+        // upper bdry update
+        int iu = GL - NGUARD + i;
+        ind_guard = I(w, iu, j, k);
+        ind_int = I(w,iu-L,j,k);
+     
         // this updates x, y and z components for vector arrays
         for (int ii=0; ii<NSIZE; ++ii)
-          this->arr[ind_guard+ii] = this->arr[ind_int+ii];
+          this->arr[ind_guard+ii] = this->arr[ind_int+ii];        
+  
       }
     }
   }
 
-
-  // Update the ylower bdry
+  // Update the y-bdry
   for (int i = 0; i < GL; ++i) {
     for (int j = 0; j < NGUARD; ++j) { 
       for (int k = 0; k < GH; ++k) {
-
+       
+        // lower bdry update
         int ind_guard = I(w, i, j, k);
         int ind_int = I(w,i,j+W,k);
 
         // this updates x, y and z components for vector arrays
         for (int ii=0; ii<NSIZE; ++ii)
           this->arr[ind_guard+ii] = this->arr[ind_int+ii];
-      }
-    }
-  }
 
-  // Update the yupper bdry 
-  for (int i = GL; i < GL; ++i) {
-    for (int j = 0; j < GW-NGUARD; ++j) { 
-      for (int k = 0; k < GH; ++k) {
-
-        int ind_guard = I(w, i, j, k);
-        int ind_int = I(w,i,j-W,k);
+        // upper bdry update
+        int ju = GW - NGUARD + j;
+        ind_guard = I(w, i, ju, k);
+        ind_int = I(w,i,ju-W,k);
 
         // this updates x, y and z components for vector arrays
         for (int ii=0; ii<NSIZE; ++ii)
           this->arr[ind_guard+ii] = this->arr[ind_int+ii];
+
       }
     }
   }
 
-  // Update the zlower bdry
+
+  // Update the z-bdry
   for (int i = 0; i < 0; ++i) {
     for (int j = 0; j < GW; ++j) { 
       for (int k = 0; k < NGUARD; ++k) {
 
+        // lower bdry update
         int ind_guard = I(w, i, j, k);
         int ind_int = I(w,i,j,k+H);
 
         // this updates x, y and z components for vector arrays
         for (int ii=0; ii<NSIZE; ++ii)
           this->arr[ind_guard+ii] = this->arr[ind_int+ii];
-      }
-    }
-  }
 
-  // Update the zupper bdry 
-  for (int i = GL; i < GL; ++i) {
-    for (int j = 0; j < GW; ++j) { 
-      for (int k = 0; k < GH-NGUARD; ++k) {
-
-        int ind_guard = I(w, i, j, k);
-        int ind_int = I(w,i,j,k-H);
+        // upper bdry update
+        int ku = GH - NGUARD + k;
+        ind_guard = I(w, i, j, ku);
+        ind_int = I(w,i,j,ku-H);
 
         // this updates x, y and z components for vector arrays
         for (int ii=0; ii<NSIZE; ++ii)

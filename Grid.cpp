@@ -9,7 +9,7 @@ Grid::Grid(int l, int w, int h)
   grid_pts = L*W*H;
   dx = 2*3.14/L;
 
-  GL = L + 2*NGUARD;
+  GL = L + 2*NGUARD; // grid containing the guard cells
   GW = W + 2*NGUARD;
   GH = H + 2*NGUARD; 
 
