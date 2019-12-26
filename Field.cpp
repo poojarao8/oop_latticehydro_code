@@ -29,48 +29,57 @@ int Field::I(int w, int i, int j, int k)
   return (i*W*H*NSIZE + j*H*NSIZE + k*NSIZE + w);
 }
 
-void Field::initialize()
+void Field::initialize(int ic, int* coords, int* numprocs_dir)
+{
+  switch(ic)
+  {
+    deafult:
+    case TGV : 
+      cout << "Initializing Taylor-Green vortex problem" << endl;
+      taylor_green_vortex(coords, numprocs_dir);
+      break;
+  }
+}
+
+void Field::taylor_green_vortex(int* coords, int* numprocs_dir)
 {
   // intialize in the interior cells only
-  for(int i=NGUARD; i < L+NGUARD; i++) {
-    for(int j=NGUARD; j < W+NGUARD; j++) {
+  for(int i=NGUARD; i < L+NGUARD; i++) { 
+    for(int j=NGUARD; j < W+NGUARD; j++) { 
       for(int k=NGUARD; k < H+NGUARD; k++) {
 
-        int ind = I(X,i,j,k);
+        int ind = I(X,i,j,k); 
         this->arr[ind] = 0.0; // for pressure
 
         if (NSIZE>1) // if velocity
         {
-          double id = static_cast<double> (i-L/2.0);
-          double jd = static_cast<double> (j-W/2.0);
-          double kd = static_cast<double> (k-H/2.0);
-
-          this->arr[ind] = coef*exp(-eta*(obj->dx)*(obj->dx)
-                                    *((id*id)+(jd*jd)+(kd*kd)));
-          this->arr[ind+1] = 0.0;
-          this->arr[ind+2] = 0.0;
+          // We need to subtract NGUARD here, since i=NGUARD is corresponding to x=0
+          // This will make the xCoord, the left endpoint of the cell
+          // We have to add the offset associated with the coords of the processor.
+          double U0 = 1.0;
+          double xCoord = (i - NGUARD)*obj->dx + coords[0]*(2.0*M_PI/numprocs_dir[0]);
+          double yCoord = (j - NGUARD)*obj->dx + coords[1]*(2.0*M_PI/numprocs_dir[1]);
+          double zCoord = (k - NGUARD)*obj->dx + coords[2]*(2.0*M_PI/numprocs_dir[2]);
+          this->arr[ind] = U0 * cos(xCoord)*sin(yCoord)*sin(zCoord);
+          this->arr[ind+1] = -U0/2.0 * sin(xCoord)*cos(yCoord)*sin(zCoord);
+          this->arr[ind+2] = -U0/2.0 * sin(xCoord)*sin(yCoord)*cos(zCoord);
         }
       }
     }
   }
+
 }
 
-void Field::update_bdry(char bdry)
+void Field::update_bdry(int bdry)
 {
   switch(bdry) 
   {
     default:
-    case 'PERIODIC' :
-    case 'periodic' :
-    case 'Periodic' :
+    case PERIODIC :
        cout << "Periodic boundary condition" << endl;
        periodic_bdry();
        break;
-    case 'Wall' :
-       cout << "Boundary condition is not implemented!" << endl;
-       break;
   }
-
 }
 
 void Field::periodic_bdry()

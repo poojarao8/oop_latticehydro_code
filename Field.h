@@ -14,7 +14,7 @@ class Field
 
     // bdry update and indexing function
     void periodic_bdry();
-
+    void taylor_green_vortex(int*, int*);
   public:
     Field(int, Grid *); // constructor
     ~Field(); // destructor
@@ -22,8 +22,8 @@ class Field
     int ARR_SIZE;
     double* arr; // for velocity or pressure 
     int I(int, int, int, int); // indexing function
-    void initialize();  
-    void update_bdry(char); // apply boundary on guard cells
+    void initialize(int, int*, int*);  
+    void update_bdry(int); // apply boundary on guard cells
     // lattice calculus functions
     void bd(double*); //curl
     void bd10(double*); // divergence
