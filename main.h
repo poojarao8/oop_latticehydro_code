@@ -5,6 +5,7 @@
 #include <cmath>
 #include <mpi.h>
 #include "HYPRE_struct_ls.h"
+#include "visit_plot.h"
 #include "Grid.h"
 #include "Field.h"
 #include "TimeIntegration.h"
@@ -25,4 +26,6 @@ const double eta = 100.0;
 const double coef = 2.5;
 const double nu = 0.001;
 
+enum {PERIODIC=1};
+enum {TGV=1};
 #endif

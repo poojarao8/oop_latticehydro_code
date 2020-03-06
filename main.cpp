@@ -47,28 +47,42 @@ int main(int argc, char *argv[])
 
   // Initialize velocity
   Field velocity(3, &coarse_grid);
-  velocity.initialize();
+  velocity.initialize(TGV, coords, numprocs_dir);
   // Fill in the boundary cells
-  velocity.update_bdry('PERIODIC');
+  velocity.update_bdry(PERIODIC);
 
   // Initialize pressure
   Field pressure(1, &coarse_grid);
-  pressure.initialize();
+  pressure.initialize(TGV, coords, numprocs_dir);
   // Fill in the boundary cells
-  pressure.update_bdry('PERIODIC');
+  pressure.update_bdry(PERIODIC);
 
   // Initialize time integration object
   //PRAO: Which of the two, MPI_COMM_WORLD or cartcomm, be passed into this function?
   TimeIntegration ts(&velocity, &pressure, dt, MPI_COMM_WORLD, coords, igrid, ggrid);
 
+   // FIXME: proc grid
+  int procGridLow[] = {0,0,0};
+
+  // grid points for each of the processor as per the global grid
+  for (int i=0; i<NDIMS; ++i)
+  { 
+    procGridLow[i] = igrid[i]*coords[i] - (coords[i] % 2);
+  }
+
   // Propagate in time
   for (int itr = 0; itr < nsteps; itr++)
   {
-   // Pick a time-stepping scheme out of EULER, RK2 and RK4 (later)
-   ts.time_stepping('EULER'); 
+    // Call visit here for plotting
+    char outfile[100];
+    output_file(rank, itr, outfile);
+    visit_plot(outfile, igrid, procGridLow, pressure.arr, velocity.arr, coords);
+   
+    // Pick a time-stepping scheme out of EULER, RK2 and RK4 (later)
+    ts.time_stepping('EULER'); 
 
-   // Increment physical time  
-   T += dt;  
+    // Increment physical time  
+    T += dt;  
   }
 
   // Finalize MPI
